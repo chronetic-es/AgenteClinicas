@@ -5,6 +5,22 @@ from db import obtener_conexion_db
 from validators import validar_fechas, calcular_noches, formatear_precio
 from config import PRECIO_DESAYUNO_POR_NOCHE, PRECIO_TRANSPORTE_AEROPUERTO
 
+_DIAS_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+_MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+             "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+
+@mcp.tool()
+async def obtener_fecha_actual() -> str:
+    """Devuelve la fecha actual con el día de la semana en español, para calcular fechas relativas."""
+    hoy = date.today()
+    dia_semana = _DIAS_ES[hoy.weekday()]
+    mes = _MESES_ES[hoy.month - 1]
+    return (
+        f"Hoy es {dia_semana}, {hoy.day} de {mes} de {hoy.year}. "
+        f"Fecha ISO: {hoy.isoformat()}."
+    )
+
 
 @mcp.tool()
 async def obtener_opciones_habitacion() -> str:
