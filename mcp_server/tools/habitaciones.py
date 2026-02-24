@@ -11,9 +11,9 @@ async def obtener_opciones_habitacion() -> str:
     """Lista los tipos de habitaciones disponibles, sus precios y los servicios adicionales disponibles."""
     conn = await obtener_conexion_db()
     try:
-        filas = await conn.fetch("SELECT name, base_price, description FROM RoomTypes")
+        filas = await conn.fetch("SELECT id, name, base_price, description FROM RoomTypes")
         opciones = [
-            f"{f['name']} a {formatear_precio(float(f['base_price']))} por noche. {f['description']}"
+            f"{f['name']} (id:{f['id']}), {formatear_precio(float(f['base_price']))} por noche. {f['description']}"
             for f in filas
         ]
         addons = (
@@ -29,7 +29,7 @@ async def obtener_opciones_habitacion() -> str:
 async def calcular_presupuesto(
     fecha_entrada: str,
     fecha_salida: str,
-    tipo_habitacion: str,
+    tipo_habitacion_id: int,
     desayuno: bool = False,
     transporte: bool = False,
 ) -> str:
@@ -41,11 +41,11 @@ async def calcular_presupuesto(
     conn = await obtener_conexion_db()
     try:
         tipo = await conn.fetchrow(
-            "SELECT name, base_price FROM RoomTypes WHERE name ILIKE $1",
-            f"%{tipo_habitacion}%",
+            "SELECT name, base_price FROM RoomTypes WHERE id = $1",
+            tipo_habitacion_id,
         )
         if not tipo:
-            return f"No encontré el tipo de habitación {tipo_habitacion}. Puede consultar las opciones disponibles."
+            return "No encontré ese tipo de habitación. Puede consultar las opciones disponibles."
 
         noches = calcular_noches(fecha_entrada, fecha_salida)
         base_price = float(tipo["base_price"])
@@ -69,7 +69,7 @@ async def calcular_presupuesto(
 
 
 @mcp.tool()
-async def verificar_disponibilidad(fecha_entrada: str, fecha_salida: str, tipo_habitacion: str) -> str:
+async def verificar_disponibilidad(fecha_entrada: str, fecha_salida: str, tipo_habitacion_id: int) -> str:
     """Verifica si hay habitaciones libres de un tipo específico."""
     error = validar_fechas(fecha_entrada, fecha_salida)
     if error:
@@ -78,11 +78,11 @@ async def verificar_disponibilidad(fecha_entrada: str, fecha_salida: str, tipo_h
     conn = await obtener_conexion_db()
     try:
         tipo = await conn.fetchrow(
-            "SELECT id, name FROM RoomTypes WHERE name ILIKE $1",
-            f"%{tipo_habitacion}%",
+            "SELECT id, name FROM RoomTypes WHERE id = $1",
+            tipo_habitacion_id,
         )
         if not tipo:
-            return f"No reconozco el tipo de habitación {tipo_habitacion}. Puede consultar las opciones disponibles."
+            return "No reconozco ese tipo de habitación. Puede consultar las opciones disponibles."
 
         d_entrada = date.fromisoformat(fecha_entrada)
         d_salida = date.fromisoformat(fecha_salida)

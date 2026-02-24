@@ -12,7 +12,7 @@ async def crear_reserva(
     telefono: str,
     fecha_entrada: str,
     fecha_salida: str,
-    tipo_habitacion: str,
+    tipo_habitacion_id: int,
     desayuno: bool = False,
     transporte: bool = False,
 ) -> str:
@@ -35,8 +35,8 @@ async def crear_reserva(
 
         async with conn.transaction():
             tipo = await conn.fetchrow(
-                "SELECT id, name, base_price FROM RoomTypes WHERE name ILIKE $1",
-                f"%{tipo_habitacion}%",
+                "SELECT id, name, base_price FROM RoomTypes WHERE id = $1",
+                tipo_habitacion_id,
             )
             if not tipo:
                 return "No encontré ese tipo de habitación. Puede consultar las opciones disponibles."
@@ -165,12 +165,12 @@ async def modificar_reserva(
     reserva_id: int,
     nueva_fecha_entrada: str = "",
     nueva_fecha_salida: str = "",
-    nuevo_tipo_habitacion: str = "",
+    nuevo_tipo_habitacion_id: int | None = None,
     nuevo_desayuno: bool | None = None,
     nuevo_transporte: bool | None = None,
 ) -> str:
     """Modifica las fechas, el tipo de habitación o los servicios adicionales de una reserva existente."""
-    if not nueva_fecha_entrada and not nueva_fecha_salida and not nuevo_tipo_habitacion \
+    if not nueva_fecha_entrada and not nueva_fecha_salida and nuevo_tipo_habitacion_id is None \
             and nuevo_desayuno is None and nuevo_transporte is None:
         return "Debe indicar al menos un cambio."
 
@@ -206,13 +206,13 @@ async def modificar_reserva(
         d_entrada = date.fromisoformat(f_entrada)
         d_salida = date.fromisoformat(f_salida)
 
-        if nuevo_tipo_habitacion:
+        if nuevo_tipo_habitacion_id is not None:
             tipo = await conn.fetchrow(
-                "SELECT id, name, base_price FROM RoomTypes WHERE name ILIKE $1",
-                f"%{nuevo_tipo_habitacion}%",
+                "SELECT id, name, base_price FROM RoomTypes WHERE id = $1",
+                nuevo_tipo_habitacion_id,
             )
             if not tipo:
-                return f"No encontré el tipo de habitación {nuevo_tipo_habitacion}. Puede consultar las opciones disponibles."
+                return "No encontré ese tipo de habitación. Puede consultar las opciones disponibles."
         else:
             tipo = {
                 "id": reserva["tipo_id"],
