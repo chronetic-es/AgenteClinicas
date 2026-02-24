@@ -20,6 +20,7 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         if MCP_API_KEY and request.method != "OPTIONS":
             auth = request.headers.get("Authorization", "")
+            print(f"[AUTH] received='{auth}' expected='Bearer {MCP_API_KEY}'", flush=True)
             if not auth.startswith("Bearer ") or auth[7:] != MCP_API_KEY:
                 return JSONResponse({"error": "Unauthorized"}, status_code=401)
         return await call_next(request)
