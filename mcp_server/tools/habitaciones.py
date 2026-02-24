@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from instance import mcp
 from db import obtener_conexion_db
@@ -20,6 +20,16 @@ async def obtener_fecha_actual() -> str:
         f"Hoy es {dia_semana}, {hoy.day} de {mes} de {hoy.year}. "
         f"Fecha ISO: {hoy.isoformat()}."
     )
+
+
+@mcp.tool()
+async def calcular_fecha(dias_desde_hoy: int) -> str:
+    """Devuelve la fecha ISO y el día de la semana correspondiente a N días desde hoy.
+    Úsalo para verificar cualquier fecha relativa: mañana=1, pasado mañana=2, 1 semana=7, etc."""
+    d = date.today() + timedelta(days=dias_desde_hoy)
+    dia = _DIAS_ES[d.weekday()]
+    mes = _MESES_ES[d.month - 1]
+    return f"{dia} {d.day} de {mes} de {d.year} → {d.isoformat()}"
 
 
 @mcp.tool()
