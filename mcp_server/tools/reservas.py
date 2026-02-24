@@ -58,8 +58,9 @@ async def crear_reserva(
                 return "Lo siento, no quedan habitaciones disponibles de ese tipo para las fechas indicadas."
 
             noches = (d_salida - d_entrada).days
+            base_price = float(tipo["base_price"])
             extra = (noches * PRECIO_DESAYUNO_POR_NOCHE if desayuno else 0) + (PRECIO_TRANSPORTE_AEROPUERTO if transporte else 0)
-            total = noches * tipo["base_price"] + extra
+            total = noches * base_price + extra
 
             u_id = await conn.fetchval(
                 """
@@ -242,8 +243,9 @@ async def modificar_reserva(
                 return "No hay habitaciones disponibles de ese tipo para las nuevas fechas."
 
             noches = (d_salida - d_entrada).days
+            base_price = float(tipo["base_price"])
             extra = (noches * PRECIO_DESAYUNO_POR_NOCHE if desayuno else 0) + (PRECIO_TRANSPORTE_AEROPUERTO if transporte else 0)
-            total = noches * tipo["base_price"] + extra
+            total = noches * base_price + extra
 
             await conn.execute(
                 """

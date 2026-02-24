@@ -48,11 +48,12 @@ async def calcular_presupuesto(
             return f"No encontré el tipo de habitación {tipo_habitacion}. Puede consultar las opciones disponibles."
 
         noches = calcular_noches(fecha_entrada, fecha_salida)
+        base_price = float(tipo["base_price"])
         extra = (noches * PRECIO_DESAYUNO_POR_NOCHE if desayuno else 0) + (PRECIO_TRANSPORTE_AEROPUERTO if transporte else 0)
-        total = noches * tipo["base_price"] + extra
+        total = noches * base_price + extra
 
         desglose = []
-        desglose.append(f"habitación {noches} noches a {formatear_precio(float(tipo['base_price']))} por noche: {formatear_precio(noches * float(tipo['base_price']))}")
+        desglose.append(f"habitación {noches} noches a {formatear_precio(base_price)} por noche: {formatear_precio(noches * base_price)}")
         if desayuno:
             desglose.append(f"desayuno {noches} noches a {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} por noche: {formatear_precio(noches * PRECIO_DESAYUNO_POR_NOCHE)}")
         if transporte:
