@@ -41,6 +41,8 @@ CREATE TABLE Bookings (
     check_out_date DATE NOT NULL,
     total_amount DECIMAL(10, 2),
     status booking_status DEFAULT 'Pending',
+    desayuno_incluido BOOLEAN NOT NULL DEFAULT FALSE,
+    transporte_aeropuerto BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT valid_dates CHECK (check_out_date > check_in_date)
 );
 
@@ -65,8 +67,8 @@ INSERT INTO Rooms (room_number, room_type_id, status) VALUES
 ('301', 3, 'Dirty');
 
 INSERT INTO Users (full_name, phone) VALUES
-('John Doe', 'john@example.com', '555-0199'),
-('Jane Smith', 'jane@example.com', '555-0122');
+('John Doe', '555-0199'),
+('Jane Smith', '555-0122');
 
 INSERT INTO Bookings (user_id, check_in_date, check_out_date, total_amount, status) VALUES
 (1, '2026-06-10', '2026-06-13', 360.00, 'Confirmed');

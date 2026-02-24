@@ -17,6 +17,9 @@ services:
       - db
     environment:
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - MCP_API_KEY=${MCP_API_KEY}
+      - PRECIO_DESAYUNO_POR_NOCHE=${PRECIO_DESAYUNO_POR_NOCHE}
+      - PRECIO_TRANSPORTE_AEROPUERTO=${PRECIO_TRANSPORTE_AEROPUERTO}
     ports:
       - "8000:8000"
 

@@ -1,0 +1,104 @@
+from datetime import date
+
+from instance import mcp
+from db import obtener_conexion_db
+from validators import validar_fechas, calcular_noches, formatear_precio
+from config import PRECIO_DESAYUNO_POR_NOCHE, PRECIO_TRANSPORTE_AEROPUERTO
+
+
+@mcp.tool()
+async def obtener_opciones_habitacion() -> str:
+    """Lista los tipos de habitaciones disponibles, sus precios y los servicios adicionales disponibles."""
+    conn = await obtener_conexion_db()
+    try:
+        filas = await conn.fetch("SELECT name, base_price, description FROM RoomTypes")
+        opciones = [
+            f"{f['name']} a {formatear_precio(float(f['base_price']))} por noche. {f['description']}"
+            for f in filas
+        ]
+        addons = (
+            f"También ofrecemos desayuno incluido por {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} por noche, "
+            f"y servicio de transporte desde el aeropuerto por {formatear_precio(PRECIO_TRANSPORTE_AEROPUERTO)}."
+        )
+        return "Tenemos " + str(len(opciones)) + " tipos de habitación. " + " ".join(opciones) + " " + addons
+    finally:
+        await conn.close()
+
+
+@mcp.tool()
+async def calcular_presupuesto(
+    fecha_entrada: str,
+    fecha_salida: str,
+    tipo_habitacion: str,
+    desayuno: bool = False,
+    transporte: bool = False,
+) -> str:
+    """Calcula el costo total de una estancia sin realizar la reserva. Incluye opciones de desayuno y transporte."""
+    error = validar_fechas(fecha_entrada, fecha_salida)
+    if error:
+        return error
+
+    conn = await obtener_conexion_db()
+    try:
+        tipo = await conn.fetchrow(
+            "SELECT name, base_price FROM RoomTypes WHERE name ILIKE $1",
+            f"%{tipo_habitacion}%",
+        )
+        if not tipo:
+            return f"No encontré el tipo de habitación {tipo_habitacion}. Puede consultar las opciones disponibles."
+
+        noches = calcular_noches(fecha_entrada, fecha_salida)
+        extra = (noches * PRECIO_DESAYUNO_POR_NOCHE if desayuno else 0) + (PRECIO_TRANSPORTE_AEROPUERTO if transporte else 0)
+        total = noches * tipo["base_price"] + extra
+
+        desglose = []
+        desglose.append(f"habitación {noches} noches a {formatear_precio(float(tipo['base_price']))} por noche: {formatear_precio(noches * float(tipo['base_price']))}")
+        if desayuno:
+            desglose.append(f"desayuno {noches} noches a {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} por noche: {formatear_precio(noches * PRECIO_DESAYUNO_POR_NOCHE)}")
+        if transporte:
+            desglose.append(f"transporte aeropuerto: {formatear_precio(PRECIO_TRANSPORTE_AEROPUERTO)}")
+
+        return (
+            f"Presupuesto para {tipo['name']}, {noches} noches. "
+            + ", ".join(desglose)
+            + f". Total: {formatear_precio(total)}."
+        )
+    finally:
+        await conn.close()
+
+
+@mcp.tool()
+async def verificar_disponibilidad(fecha_entrada: str, fecha_salida: str, tipo_habitacion: str) -> str:
+    """Verifica si hay habitaciones libres de un tipo específico."""
+    error = validar_fechas(fecha_entrada, fecha_salida)
+    if error:
+        return error
+
+    conn = await obtener_conexion_db()
+    try:
+        tipo = await conn.fetchrow(
+            "SELECT id, name FROM RoomTypes WHERE name ILIKE $1",
+            f"%{tipo_habitacion}%",
+        )
+        if not tipo:
+            return f"No reconozco el tipo de habitación {tipo_habitacion}. Puede consultar las opciones disponibles."
+
+        d_entrada = date.fromisoformat(fecha_entrada)
+        d_salida = date.fromisoformat(fecha_salida)
+
+        query = """
+            SELECT COUNT(*) FROM Rooms r
+            WHERE r.room_type_id = $1
+            AND r.id NOT IN (
+                SELECT ra.room_id FROM RoomAssignments ra
+                JOIN Bookings b ON ra.booking_id = b.id
+                WHERE (b.check_in_date, b.check_out_date) OVERLAPS ($2, $3)
+                AND b.status != 'Cancelled'
+            )
+        """
+        cantidad = await conn.fetchval(query, tipo["id"], d_entrada, d_salida)
+        if cantidad > 0:
+            return f"Hay {cantidad} habitaciones de tipo {tipo['name']} disponibles para esas fechas."
+        return f"Lo sentimos, no hay habitaciones de tipo {tipo['name']} disponibles para esas fechas."
+    finally:
+        await conn.close()
