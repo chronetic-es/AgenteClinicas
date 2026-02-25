@@ -34,16 +34,29 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 
 @mcp.tool()
 async def obtener_opciones_habitacion() -> str:
-    """Lista los tipos de habitaciones disponibles, sus precios y los servicios adicionales disponibles."""
+    """Lista los tipos de habitaciones disponibles, su capacidad, disponibilidad de cama supletoria y los servicios adicionales."""
     conn = await obtener_conexion_db()
     try:
-        filas = await conn.fetch("SELECT id, name, base_price, description FROM RoomTypes")
-        opciones = [
-            f"{f['name']} (id:{f['id']}), {formatear_precio(float(f['base_price']))} por noche. {f['description']}"
-            for f in filas
-        ]
+        filas = await conn.fetch(
+            "SELECT id, name, base_price, max_occupancy, extra_bed_available, extra_bed_price, description FROM RoomTypes ORDER BY base_price"
+        )
+        opciones = []
+        for f in filas:
+            extra_bed_available = f["extra_bed_available"]
+            if extra_bed_available:
+                extra_bed_price = float(f["extra_bed_price"])
+                supletoria_info = (
+                    f"Admite cama supletoria hasta 3 personas "
+                    f"(+{formatear_precio(extra_bed_price)} por noche)."
+                )
+            else:
+                supletoria_info = "No admite cama supletoria."
+            opciones.append(
+                f"{f['name']} (id:{f['id']}), {formatear_precio(float(f['base_price']))} por noche, "
+                f"capacidad {f['max_occupancy']} personas. {supletoria_info} {f['description']}"
+            )
         addons = (
-            f"También ofrecemos desayuno incluido por {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} por noche, "
+            f"También ofrecemos desayuno incluido por {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} por habitación y noche, "
             f"y servicio de transporte desde el aeropuerto por {formatear_precio(PRECIO_TRANSPORTE_AEROPUERTO)}."
         )
         return "Tenemos " + str(len(opciones)) + " tipos de habitación. " + " ".join(opciones) + " " + addons
@@ -52,51 +65,14 @@ async def obtener_opciones_habitacion() -> str:
 
 
 @mcp.tool()
-async def calcular_presupuesto(
+async def verificar_disponibilidad(
     fecha_entrada: str,
     fecha_salida: str,
     tipo_habitacion_id: int,
-    desayuno: bool = False,
-    transporte: bool = False,
+    num_habitaciones: int = 1,
 ) -> str:
-    """Calcula el costo total de una estancia sin realizar la reserva. Incluye opciones de desayuno y transporte."""
-    error = validar_fechas(fecha_entrada, fecha_salida)
-    if error:
-        return error
-
-    conn = await obtener_conexion_db()
-    try:
-        tipo = await conn.fetchrow(
-            "SELECT name, base_price FROM RoomTypes WHERE id = $1",
-            tipo_habitacion_id,
-        )
-        if not tipo:
-            return "No encontré ese tipo de habitación. Puede consultar las opciones disponibles."
-
-        noches = calcular_noches(fecha_entrada, fecha_salida)
-        base_price = float(tipo["base_price"])
-        extra = (noches * PRECIO_DESAYUNO_POR_NOCHE if desayuno else 0) + (PRECIO_TRANSPORTE_AEROPUERTO if transporte else 0)
-        total = noches * base_price + extra
-
-        desglose = []
-        desglose.append(f"habitación {noches} noches a {formatear_precio(base_price)} por noche: {formatear_precio(noches * base_price)}")
-        if desayuno:
-            desglose.append(f"desayuno {noches} noches a {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} por noche: {formatear_precio(noches * PRECIO_DESAYUNO_POR_NOCHE)}")
-        if transporte:
-            desglose.append(f"transporte aeropuerto: {formatear_precio(PRECIO_TRANSPORTE_AEROPUERTO)}")
-
-        return (
-            f"Presupuesto para {tipo['name']}, {noches} noches. "
-            + ", ".join(desglose)
-            + f". Total: {formatear_precio(total)}."
-        )
-    finally:
-        await conn.close()
-
-
-@mcp.tool()
-async def verificar_disponibilidad(fecha_entrada: str, fecha_salida: str, tipo_habitacion_id: int) -> str:
-    """Verifica si hay habitaciones libres de un tipo específico."""
+    """Verifica si hay suficientes habitaciones libres de un tipo específico para las fechas indicadas.
+    num_habitaciones indica cuántas se necesitan (por defecto 1)."""
     error = validar_fechas(fecha_entrada, fecha_salida)
     if error:
         return error
@@ -124,8 +100,105 @@ async def verificar_disponibilidad(fecha_entrada: str, fecha_salida: str, tipo_h
             )
         """
         cantidad = await conn.fetchval(query, tipo["id"], d_entrada, d_salida)
-        if cantidad > 0:
-            return f"Hay {cantidad} habitaciones de tipo {tipo['name']} disponibles para esas fechas."
-        return f"Lo sentimos, no hay habitaciones de tipo {tipo['name']} disponibles para esas fechas."
+        nombre = tipo["name"]
+        if cantidad == 0:
+            return f"Lo sentimos, no hay habitaciones de tipo {nombre} disponibles para esas fechas."
+        if cantidad < num_habitaciones:
+            return (
+                f"Solo hay {cantidad} habitación{'es' if cantidad > 1 else ''} de tipo {nombre} "
+                f"disponible{'s' if cantidad > 1 else ''} para esas fechas, "
+                f"pero se solicitan {num_habitaciones}."
+            )
+        return (
+            f"Hay {cantidad} habitaciones de tipo {nombre} disponibles para esas fechas "
+            f"(se solicitan {num_habitaciones})."
+        )
+    finally:
+        await conn.close()
+
+
+@mcp.tool()
+async def calcular_presupuesto(
+    fecha_entrada: str,
+    fecha_salida: str,
+    tipos_habitacion_ids: str,
+    extra_beds_mask: str = "",
+    desayuno: bool = False,
+    transporte: bool = False,
+) -> str:
+    """Calcula el costo total de una estancia sin realizar la reserva.
+    tipos_habitacion_ids: IDs de tipo de habitación separados por coma, uno por habitación (ej: "2,2,1").
+    extra_beds_mask: '0' o '1' por habitación indicando si lleva cama supletoria (ej: "1,0,0"). Vacío = sin camas supletorias.
+    Incluye opciones de desayuno y transporte."""
+    error = validar_fechas(fecha_entrada, fecha_salida)
+    if error:
+        return error
+
+    # Parse room type IDs
+    try:
+        ids = [int(x.strip()) for x in tipos_habitacion_ids.split(",") if x.strip()]
+    except ValueError:
+        return "El parámetro tipos_habitacion_ids debe ser una lista de IDs separados por coma (ej: '2,3')."
+    if not ids:
+        return "Debe indicar al menos un tipo de habitación."
+
+    # Parse extra beds mask
+    if extra_beds_mask.strip():
+        try:
+            mask = [int(x.strip()) for x in extra_beds_mask.split(",") if x.strip()]
+        except ValueError:
+            return "El parámetro extra_beds_mask debe ser '0' o '1' por habitación separados por coma."
+        if len(mask) != len(ids):
+            return "extra_beds_mask debe tener el mismo número de elementos que tipos_habitacion_ids."
+    else:
+        mask = [0] * len(ids)
+
+    conn = await obtener_conexion_db()
+    try:
+        noches = calcular_noches(fecha_entrada, fecha_salida)
+        desglose = []
+        total = 0.0
+
+        for i, tipo_id in enumerate(ids):
+            tipo = await conn.fetchrow(
+                "SELECT name, base_price, extra_bed_available, extra_bed_price FROM RoomTypes WHERE id = $1",
+                tipo_id,
+            )
+            if not tipo:
+                return f"No encontré el tipo de habitación con id {tipo_id}."
+
+            base_price = float(tipo["base_price"])
+            room_total = noches * base_price
+            total += room_total
+            desglose.append(
+                f"{tipo['name']}: {noches} noches × {formatear_precio(base_price)} = {formatear_precio(room_total)}"
+            )
+
+            if mask[i]:
+                if not tipo["extra_bed_available"]:
+                    return f"La {tipo['name']} no admite cama supletoria."
+                extra_bed_price = float(tipo["extra_bed_price"])
+                eb_total = noches * extra_bed_price
+                total += eb_total
+                desglose.append(
+                    f"Cama supletoria {tipo['name']}: {noches} noches × {formatear_precio(extra_bed_price)} = {formatear_precio(eb_total)}"
+                )
+
+        num_habitaciones = len(ids)
+        if desayuno:
+            desayuno_total = noches * PRECIO_DESAYUNO_POR_NOCHE * num_habitaciones
+            total += desayuno_total
+            desglose.append(
+                f"Desayuno: {noches} noches × {num_habitaciones} habitaciones × {formatear_precio(PRECIO_DESAYUNO_POR_NOCHE)} = {formatear_precio(desayuno_total)}"
+            )
+        if transporte:
+            total += PRECIO_TRANSPORTE_AEROPUERTO
+            desglose.append(f"Transporte aeropuerto: {formatear_precio(PRECIO_TRANSPORTE_AEROPUERTO)}")
+
+        return (
+            f"Presupuesto para {noches} noches, {num_habitaciones} habitación{'es' if num_habitaciones > 1 else ''}. "
+            + "; ".join(desglose)
+            + f". Total: {formatear_precio(total)}."
+        )
     finally:
         await conn.close()
