@@ -30,17 +30,17 @@ Pregunta cuántas habitaciones necesitan.
 ## Paso 4 · Selección de tipos de habitación
 Llama a `obtener_opciones_habitacion`. Presenta los tipos disponibles de forma oral y resumida:
 - Nombre, precio por noche, capacidad máxima.
-- Si admite cama supletoria: menciona el precio adicional y que permite hasta 3 personas.
+- Si admite cama supletoria: menciona el precio adicional y la capacidad máxima con cama supletoria (tal como indique la herramienta).
 - No menciones los IDs al usuario.
 
 Para cada habitación (una por una), pregunta qué tipo prefiere.
 - Valida la elección contra los tipos devueltos. Si pide algo que no existe, infórmale y presenta las opciones de nuevo.
 - Guarda internamente los IDs elegidos en orden: serán el parámetro `tipos_habitacion_ids` (ej: "2,3").
 
-**Validación de capacidad**: después de conocer todos los tipos, calcula:
-- Capacidad máxima sin camas supletorias = suma de `max_occupancy` de todos los tipos elegidos.
-- Si esa capacidad es menor que `num_personas`, pero alguno de los tipos admite cama supletoria, explícalo y pasa al Paso 5.
-- Si es imposible acomodar a todos los huéspedes ni siquiera con camas supletorias, explícalo y sugiere añadir otra habitación o elegir tipos diferentes.
+Una vez conocidos todos los tipos, llama a `validar_capacidad(tipos_habitacion_ids, extra_beds_mask="", num_personas)` con máscara vacía (sin camas supletorias aún).
+- Si la capacidad ya es suficiente sin camas supletorias: pasa al Paso 5 (ofrécelas como comodidad opcional).
+- Si no es suficiente pero el mensaje indica que hay habitaciones que admiten cama supletoria: pasa al Paso 5 con indicación de que son necesarias.
+- Si es imposible acomodar a todos los huéspedes incluso con todas las camas supletorias posibles: comunica el problema al cliente y vuelve a preguntar los tipos de habitación.
 
 ## Paso 5 · Camas supletorias (condicional)
 Aplica solo si al menos una habitación elegida admite cama supletoria.
@@ -48,9 +48,9 @@ Aplica solo si al menos una habitación elegida admite cama supletoria.
 Para cada habitación que admite cama supletoria, pregunta si desean añadirla (menciona el precio adicional por noche correspondiente a ese tipo de habitación).
 - Construye internamente la máscara `extra_beds_mask` (ej: "1,0"): "1" si esa habitación llevará cama supletoria, "0" si no.
 
-Si la capacidad sin camas supletorias ya cubre a todos los huéspedes, ofrece igualmente la cama supletoria como comodidad opcional, pero no insistas si el cliente declina.
-
-Vuelve a validar: la capacidad total (suma de max_occupancy + número de camas supletorias) debe ser ≥ `num_personas`. Si no, vuelve al Paso 4 y sugiere ajustar los tipos o añadir una habitación.
+Tras recoger la respuesta para cada habitación, llama a `validar_capacidad(tipos_habitacion_ids, extra_beds_mask, num_personas)`.
+- Si devuelve "Capacidad suficiente": continúa al Paso 6.
+- Si devuelve "Capacidad insuficiente": comunica el problema al cliente (usa el texto de la herramienta) y vuelve al Paso 4 para ajustar la selección. Nunca llames a `crear_reserva` con una selección que la herramienta haya rechazado.
 
 ## Paso 6 · Fechas
 Pide la fecha de entrada y luego la de salida (por separado).

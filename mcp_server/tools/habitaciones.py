@@ -46,7 +46,7 @@ async def obtener_opciones_habitacion() -> str:
             if extra_bed_available:
                 extra_bed_price = float(f["extra_bed_price"])
                 supletoria_info = (
-                    f"Admite cama supletoria hasta 3 personas "
+                    f"Admite cama supletoria hasta {f['max_occupancy'] + 1} personas "
                     f"(+{formatear_precio(extra_bed_price)} por noche)."
                 )
             else:
@@ -200,5 +200,92 @@ async def calcular_presupuesto(
             + "; ".join(desglose)
             + f". Total: {formatear_precio(total)}."
         )
+    finally:
+        await conn.close()
+
+
+@mcp.tool()
+async def validar_capacidad(
+    tipos_habitacion_ids: str,
+    extra_beds_mask: str,
+    num_personas: int,
+) -> str:
+    """Valida si la combinación de habitaciones y camas supletorias puede alojar al número de personas indicado.
+    tipos_habitacion_ids: IDs separados por coma, uno por habitación (ej: "2,1").
+    extra_beds_mask: '0' o '1' por habitación indicando si lleva cama supletoria (ej: "1,0"). Vacío = sin camas supletorias.
+    Devuelve confirmación si la capacidad es suficiente, o un mensaje de error explicando el problema."""
+    try:
+        ids = [int(x.strip()) for x in tipos_habitacion_ids.split(",") if x.strip()]
+    except ValueError:
+        return "tipos_habitacion_ids debe ser una lista de IDs separados por coma."
+    if not ids:
+        return "Debe indicar al menos un tipo de habitación."
+
+    if extra_beds_mask.strip():
+        try:
+            mask = [int(x.strip()) for x in extra_beds_mask.split(",") if x.strip()]
+        except ValueError:
+            return "extra_beds_mask debe ser una lista de '0' o '1' separados por coma."
+        if len(mask) != len(ids):
+            return "extra_beds_mask debe tener el mismo número de elementos que tipos_habitacion_ids."
+    else:
+        mask = [0] * len(ids)
+
+    conn = await obtener_conexion_db()
+    try:
+        capacidad_total = 0
+        desglose = []
+
+        for i, tipo_id in enumerate(ids):
+            tipo = await conn.fetchrow(
+                "SELECT name, max_occupancy, extra_bed_available FROM RoomTypes WHERE id = $1",
+                tipo_id,
+            )
+            if not tipo:
+                return f"No encontré el tipo de habitación con id {tipo_id}."
+
+            if mask[i] and not tipo["extra_bed_available"]:
+                return (
+                    f"La {tipo['name']} no admite cama supletoria. "
+                    f"Por favor, ajuste la selección."
+                )
+
+            capacidad_hab = tipo["max_occupancy"] + (1 if mask[i] else 0)
+            capacidad_total += capacidad_hab
+
+            desc = f"{tipo['name']}: {tipo['max_occupancy']} persona{'s' if tipo['max_occupancy'] > 1 else ''}"
+            if mask[i]:
+                desc += " + 1 cama supletoria"
+            desglose.append(desc)
+
+        resumen = ", ".join(desglose)
+
+        if capacidad_total >= num_personas:
+            return (
+                f"Capacidad suficiente. {len(ids)} habitación{'es' if len(ids) > 1 else ''}: {resumen}. "
+                f"Capacidad total: {capacidad_total} personas para {num_personas} huésped{'es' if num_personas > 1 else ''}."
+            )
+
+        falta = num_personas - capacidad_total
+        # Suggest adding extra beds to rooms that support it but don't have one yet
+        sugerencias = []
+        for j, tipo_id in enumerate(ids):
+            if mask[j] == 0:
+                t = await conn.fetchrow(
+                    "SELECT name, extra_bed_available FROM RoomTypes WHERE id = $1", tipo_id
+                )
+                if t and t["extra_bed_available"]:
+                    sugerencias.append(t["name"])
+
+        mensaje = (
+            f"Capacidad insuficiente. La selección cubre {capacidad_total} personas "
+            f"({resumen}), pero se necesitan {num_personas} (faltan {falta}). "
+        )
+        if sugerencias:
+            mensaje += (
+                f"Podría añadir cama supletoria en: {', '.join(sugerencias)}. "
+            )
+        mensaje += "También puede añadir otra habitación o elegir tipos con mayor capacidad."
+        return mensaje
     finally:
         await conn.close()
