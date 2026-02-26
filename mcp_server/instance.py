@@ -1,3 +1,3 @@
 from fastmcp import FastMCP
 
-mcp = FastMCP("HotelBookings")
+mcp = FastMCP("AgenteClinicas")

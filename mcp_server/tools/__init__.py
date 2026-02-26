@@ -1,2 +1,3 @@
-import tools.habitaciones  # noqa: F401
-import tools.reservas      # noqa: F401
+import mcp_server.tools.CalculoFechas  # noqa: F401
+import mcp_server.tools.Citas      # noqa: F401
+import mcp_server.tools.Extras
