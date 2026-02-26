@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 
 from instance import mcp
-from db import obtener_conexion_db
 from validators import validar_fechas, calcular_noches, formatear_precio
 
 
