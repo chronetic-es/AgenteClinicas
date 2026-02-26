@@ -1,7 +1,6 @@
 from datetime import date
 
 from instance import mcp
-from db import obtener_conexion_db
 from validators import validar_fechas, validar_telefono, formatear_precio
 
 @mcp.tool()
