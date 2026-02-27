@@ -1,6 +1,7 @@
 from instance import mcp
 import calendario
 import datetime
+import config
 
 @mcp.tool()
 async def ResolverDuda() ->str:
@@ -19,17 +20,17 @@ async def crearEvento()->str:
         'summary': 'Prueba',
         'description':'Esto es una prueba',
         'start':{
-            'datetime':start_time.isoformat(),
+            'dateTime':start_time.isoformat(),
             'timezone':'UTC'
         },
         'end':{
-            'datetime':end_time.isoformat(),
+            'dateTime':end_time.isoformat(),
             'timezone':'UTC'
         }
     }
 
     created_event = service.events().insert(
-        calendarId='primary',
+        calendarId=config.CALENDAR_ID,
         body=event
     ).execute()
 
@@ -43,7 +44,7 @@ async def PruebaCalendario()->str:
     events_result = (
         service.events()
         .list(
-            calendarId="primary",
+            calendarId=config.CALENDAR_ID,
             timeMin=now,
             maxResults=10,
             singleEvents=True,
