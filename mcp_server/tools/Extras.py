@@ -19,11 +19,11 @@ async def crearEvento()->str:
         'summary': 'Prueba',
         'description':'Esto es una prueba',
         'start':{
-            'datetime':start_time,
+            'datetime':start_time.isoformat(),
             'timezone':'UTC'
         },
         'end':{
-            'datetime':end_time,
+            'datetime':end_time.isoformat(),
             'timezone':'UTC'
         }
     }
