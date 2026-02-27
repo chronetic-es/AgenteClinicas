@@ -7,7 +7,7 @@ from googleapiclient.errors import HttpError
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-SERVICE_ACCOUNT_FILE = 'credentials-json'
+SERVICE_ACCOUNT_FILE = 'credentials.json'
 
 def getCalendarInstance():
 
