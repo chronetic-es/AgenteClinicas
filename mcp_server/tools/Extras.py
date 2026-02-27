@@ -8,6 +8,34 @@ async def ResolverDuda() ->str:
 
 
 @mcp.tool()
+async def crearEvento()->str:
+    service = calendario.getCalendarInstance()
+
+    start_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    end_time = start_time + 1 
+
+
+    event = {
+        'summary': 'Prueba',
+        'description':'Esto es una prueba',
+        'start':{
+            'datetime':start_time.isoformat(),
+            'timezone':'UTC'
+        },
+        'end':{
+            'datetime':end_time.isoformat(),
+            'timezone':'UTC'
+        }
+    }
+
+    created_event = service.events().insert(
+        calendarId='primary',
+        body=event
+    ).execute()
+    
+    return "Evento creado con éxito"
+
+@mcp.tool()
 async def PruebaCalendario()->str:
     service = calendario.getCalendarInstance()
     now = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
