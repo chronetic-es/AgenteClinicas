@@ -4,6 +4,7 @@ services:
     environment:
       - MCP_API_KEY=${MCP_API_KEY}
       - CALENDAR_ID=${CALENDAR_ID}
+      - CREDENTIALS=${CREDENTIALS}
     ports:
       - "8080:8080"
 
