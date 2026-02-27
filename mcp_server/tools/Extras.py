@@ -12,7 +12,7 @@ async def crearEvento()->str:
     service = calendario.getCalendarInstance()
 
     start_time = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
-    end_time = start_time + 1 
+    end_time = start_time + datetime.timedelta(hours=1)
 
 
     event = {
@@ -32,7 +32,7 @@ async def crearEvento()->str:
         calendarId='primary',
         body=event
     ).execute()
-    
+
     return "Evento creado con éxito"
 
 @mcp.tool()
