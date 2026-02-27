@@ -30,7 +30,7 @@ async def crearEvento()->str:
     }
 
     created_event = service.events().insert(
-        calendarId=config.CALENDAR_ID,
+        calendarId='primary',
         body=event
     ).execute()
 
@@ -44,7 +44,7 @@ async def PruebaCalendario()->str:
     events_result = (
         service.events()
         .list(
-            calendarId=config.CALENDAR_ID,
+            calendarId='primary',
             timeMin=now,
             maxResults=10,
             singleEvents=True,
