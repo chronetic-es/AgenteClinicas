@@ -5,4 +5,3 @@ load_dotenv()
 
 
 MCP_API_KEY: str | None = os.getenv("MCP_API_KEY")
-SERVICE_ACCOUNT_FILE: str | None = os.getenv("CREDENTIALS")
