@@ -1,6 +1,7 @@
 import datetime
 import os.path
 import config
+import json
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -11,7 +12,7 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 def getCalendarInstance():
 
-    credentials = service_account.Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE,scopes=SCOPES)
+    credentials = service_account.Credentials.from_service_account_file(json.loads(config.SERVICE_ACCOUNT_FILE),scopes=SCOPES)
 
     try:
         service = build("calendar","v3",credentials=credentials)
