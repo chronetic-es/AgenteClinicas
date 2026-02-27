@@ -8,11 +8,11 @@ from googleapiclient.errors import HttpError
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-SERVICE_ACCOUNT_FILE = config.CREDENTIALS
+SERVICE_ACCOUNT_INFO = config.CREDENTIALS
 
 def getCalendarInstance():
 
-    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE,scopes=SCOPES)
+    credentials = service_account.Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO,scopes=SCOPES)
 
     try:
         service = build("calendar","v3",credentials=credentials)
