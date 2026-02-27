@@ -3,6 +3,7 @@ services:
     build: ./mcp_server
     environment:
       - MCP_API_KEY=${MCP_API_KEY}
+      - CALENDAR_ID=${CALENDAR_ID}
     ports:
       - "8080:8080"
 
