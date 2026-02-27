@@ -11,7 +11,7 @@ async def ResolverDuda() ->str:
 async def crearEvento()->str:
     service = calendario.getCalendarInstance()
 
-    start_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    start_time = datetime.datetime.now(tz=datetime.timezone.utc).timedelta(hours=1)
     end_time = start_time + datetime.timedelta(hours=1)
 
 
