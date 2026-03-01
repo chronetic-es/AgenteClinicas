@@ -1,4 +1,4 @@
-from datetime import date, timedelta,time,datetime
+from datetime import date, timedelta,time,datetime,timezone
 import json
 import calendario
 import config
@@ -48,8 +48,8 @@ async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
         service.events()
         .list(
             calendarId=config.CALENDAR_ID,
-            timeMax=datetime.combine(end,closing_time,tzinfo=datetime.timezone.utc).isoformat(),
-            timeMin=datetime.combine(start,open_time,tzinfo=datetime.timezone.utc).isoformat(),
+            timeMax=datetime.combine(end,closing_time,tzinfo=timezone.utc).isoformat(),
+            timeMin=datetime.combine(start,open_time,tzinfo=timezone.utc).isoformat(),
             maxResults=10,
             singleEvents=True,
             orderBy="startTime",
