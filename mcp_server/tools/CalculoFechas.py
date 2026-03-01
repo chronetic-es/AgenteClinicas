@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta,time,datetime
 import json
 import calendario
 import config
@@ -39,6 +39,8 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 @mcp.tool()
 async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
     service = calendario.getCalendarInstance()
+    open_time = time(hour=9)
+    closing_time = time(hour=22)
     start= date.today() + timedelta(days=start_date)
     end= date.today() + timedelta(days=end_date)
 
@@ -46,8 +48,8 @@ async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
         service.events()
         .list(
             calendarId = config.CALENDAR_ID,
-            timeMin = start.isoformat(),
-            timeMax = end.isoformat(),
+            timeMin = datetime.combine(start,open_time).isoformat(),
+            timeMax = datetime.combine(end,closing_time).isoformat(),
             maxResults = 10,
             singleEvents=True,
             orderBy = "startTime",
