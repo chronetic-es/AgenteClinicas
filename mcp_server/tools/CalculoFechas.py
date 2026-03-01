@@ -46,8 +46,8 @@ async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
         service.events()
         .list(
             calendarId = config.CALENDAR_ID,
-            timeMin = start,
-            timeMax = end,
+            timeMin = start.isoformat(),
+            timeMax = end.isoformat(),
             maxResults = 10,
             singleEvents=True,
             orderBy = "startTime",
