@@ -4,8 +4,12 @@ import datetime
 import config
 
 @mcp.tool()
-async def ResolverDuda() ->str:
+async def resolverDuda() ->str:
     return ""
+
+@mcp.tool()
+async def servicios() -> str:
+    return "Depilación,Masajes"
 
 
 @mcp.tool()

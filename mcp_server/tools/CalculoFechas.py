@@ -37,10 +37,19 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 
 
 @mcp.tool()
-async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
+async def consultar_disponibilidad(start_date:int,end_date:int,start_hour:int = None, end_hour:int=None,start_minutes:int= None,end_minutes:int=None) -> list:
+    """Consulta la disponibilidad en el calendario de google.Úsalo cuando tengas un rango de fechas o una fecha exacta.
+    """
     service = calendario.getCalendarInstance()
-    open_time = time(hour=9)
-    closing_time = time(hour=22)
+
+    start_hour = start_hour or 9
+    end_hour = end_hour or 22
+    start_minutes = start_minutes or 0 
+    end_minutes = end_minutes or 0
+
+    start_time = time(hour=start_hour,minute=start_minutes)
+    end_time = time(hour=end_hour,minute=end_minutes)
+
     start= date.today() + timedelta(days=start_date)
     end= date.today() + timedelta(days=end_date)
 
@@ -48,14 +57,14 @@ async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
         service.events()
         .list(
             calendarId=config.CALENDAR_ID,
-            timeMax=datetime.combine(end,closing_time,tzinfo=timezone.utc).isoformat(),
-            timeMin=datetime.combine(start,open_time,tzinfo=timezone.utc).isoformat(),
+            timeMin=datetime.combine(start,start_time,tzinfo=timezone.utc).isoformat(),
+            timeMax=datetime.combine(end,end_time,tzinfo=timezone.utc).isoformat(),
             maxResults=10,
             singleEvents=True,
             orderBy="startTime",
         )
         .execute()
     )
-    events = events_result().get("items",[])
+    events = events_result.get("items",[])
 
     return events
