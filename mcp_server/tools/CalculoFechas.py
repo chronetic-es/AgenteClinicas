@@ -47,13 +47,14 @@ async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
     events_result = (
         service.events()
         .list(
-            calendarId = config.CALENDAR_ID,
-            timeMin = datetime.combine(start,open_time).isoformat(),
-            timeMax = datetime.combine(end,closing_time).isoformat(),
-            maxResults = 10,
+            calendarId=config.CALENDAR_ID,
+            timeMax=datetime.combine(end,closing_time,tz=datetime.timezone.utc).isoformat(),
+            timeMin=datetime.combine(start,open_time,tz=datetime.timezone.utc).isoformat(),
+            maxResults=10,
             singleEvents=True,
-            orderBy = "startTime",
-        ).execute()
+            orderBy="startTime",
+        )
+        .execute()
     )
     events = events_result().get("items",[])
 
