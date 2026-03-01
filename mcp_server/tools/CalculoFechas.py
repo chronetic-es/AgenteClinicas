@@ -1,4 +1,7 @@
 from datetime import date, timedelta
+import json
+import calendario
+import config
 
 from instance import mcp
 from validators import validar_fechas, calcular_noches, formatear_precio
@@ -32,6 +35,24 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 
 
 
+
 @mcp.tool()
-async def consultar_disponibilidad() -> str:
-    return ""
+async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
+    service = calendario.getCalendarInstance()
+    start= calcular_fecha(start_date) 
+    end= calcular_fecha(end_date)
+
+    events_result = (
+        service.events()
+        .list(
+            calendarId = config.CALENDAR_ID,
+            timeMin = start,
+            timeMax = end,
+            maxResults = 10,
+            singleEvents=True,
+            orderBy = "startTime",
+        ).execute()
+    )
+    events = events_result().get("items",[])
+
+    return events
