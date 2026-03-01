@@ -39,8 +39,8 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 @mcp.tool()
 async def consultar_disponibilidad(start_date:int,end_date:int) -> list:
     service = calendario.getCalendarInstance()
-    start= calcular_fecha(start_date) 
-    end= calcular_fecha(end_date)
+    start= date.today() + timedelta(days=start_date)
+    end= date.today() + timedelta(days=end_date)
 
     events_result = (
         service.events()
