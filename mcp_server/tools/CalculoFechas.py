@@ -81,16 +81,16 @@ async def consultar_disponibilidad(
             continue
         if today.weekday() == 5 and today.hour() >= 14:
              continue
-        if today.hour() < 12:
-            for j in range((today.hour()*60) + today.minute(),14*60,service_time):
-                results = results.get(f"{today.day()}-{today.month()}-{today.year()}") or []
-                results[f"{today.day()}-{today.month()}-{today.year()}"].append(f"{today.hour()+1}:{today.minute()+1}")
+        if today.hour < 12:
+            for j in range((today.hour*60) + today.minute,14*60,service_time):
+                results = results.get(f"{today.day}-{today.month}-{today.year}") or []
+                results[f"{today.day}-{today.month}-{today.year}"].append(f"{today.hour+1}:{today.minute+1}")
                 today = today + timedelta(minutes=service_time)
         today = today.replace(hour=16)
-        if today.hour() > 12 and today.weekday()!= 5 :
-            for j in range((today.hour()*60) + today.minute(),20*60,service_time):  
-                results = results.get(f"{today.day()}-{today.month()}-{today.year()}") or []
-                results[f"{today.day()}-{today.month()}-{today.year()}"].append(f"{today.hour()+1}:{today.minute()+1}")
+        if today.hour > 12 and today.weekday()!= 5 :
+            for j in range((today.hour*60) + today.minute,20*60,service_time):  
+                results = results.get(f"{today.day}-{today.month}-{today.year}") or []
+                results[f"{today.day}-{today.month}-{today.year}"].append(f"{today.hour+1}:{today.minute+1}")
                 today = today + timedelta(minutes=service_time)
 
 
