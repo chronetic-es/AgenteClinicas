@@ -87,7 +87,7 @@ async def consultar_disponibilidad(
                     if  datetime.fromisoformat(event['start']['dateTime']) <= today + timedelta(minutes=1) <= datetime.fromisoformat(event['end']['dateTime'])  :  
                         results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                         results[f"{today.day}-{today.month}-{today.year}"].append(f"{today.hour+1 if today.minute+1 == 60 else today.hour}:{0 if today.minute+1==60 else today.minute+1}")
-                        break              
+                                    
                 today = today + timedelta(minutes=service_time)
 
         if end_hour > 14:
@@ -98,7 +98,7 @@ async def consultar_disponibilidad(
                 if datetime.fromisoformat(event['start']['dateTime']) <= today + timedelta(minutes=1) <= datetime.fromisoformat(event['end']['dateTime'])  :
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{today.hour+1 if today.minute+1 == 60 else today.hour}:{0 if today.minute+1==60 else today.minute+1}")
-                    break
+                    
                 today = today + timedelta(minutes=service_time)
 
 
