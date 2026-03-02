@@ -86,12 +86,11 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute,(14*60) - service_time,service_time):
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(minutes = 1) <= datetime.fromisoformat(event['end']['dateTime']):
+                    if (temp + timedelta(minutes = 1) >= datetime.fromisoformat( event['start']['dateTime'])) and (temp + timedelta(minutes = 1)  <= datetime.fromisoformat(event['end']['dateTime'])):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour+1 if temp.minute+1 == 60 else temp.hour}:{'00' if temp.minute+1==60 else temp.minute+1}")
-                print(results)
                 temp = temp + timedelta(minutes=service_time)
 
         if end_hour > 14:
@@ -102,7 +101,7 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute,(20*60)-service_time,service_time):  
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(minutes = 1) <= datetime.fromisoformat(event['end']['dateTime']):
+                    if (temp + timedelta(minutes = 1) >= datetime.fromisoformat( event['start']['dateTime'])) and (temp + timedelta(minutes = 1)  <= datetime.fromisoformat(event['end']['dateTime'])):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
