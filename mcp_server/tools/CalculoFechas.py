@@ -37,28 +37,35 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 
 
 @mcp.tool()
-async def consultar_disponibilidad(start_date:int,end_date:int,start_hour:int = None, end_hour:int=None,start_minutes:int= None,end_minutes:int=None) -> list:
+async def consultar_disponibilidad(
+    start_date:int,end_date:int,
+    servicio:str,**kwargs
+    ) -> list:
     """Consulta la disponibilidad en el calendario de google.Úsalo cuando tengas un rango de fechas o una fecha exacta.
     """
-    service = calendario.getCalendarInstance()
-
-    start_hour = start_hour or 9
-    end_hour = end_hour or 22
-    start_minutes = start_minutes or 0 
-    end_minutes = end_minutes or 0
-
-    start_time = time(hour=start_hour,minute=start_minutes)
-    end_time = time(hour=end_hour,minute=end_minutes)
+    calendar_instance = calendario.getCalendarInstance()
 
     start= date.today() + timedelta(days=start_date)
     end= date.today() + timedelta(days=end_date)
 
+    start_hour = kwargs.get('start_hour') or 10
+    end_hour = kwargs.get('end_hour') or 20
+    start_minutes = kwargs.get('start_minutes') or 0
+    end_minutes = kwargs.get('end_minutes') or 0
+
+    start_time = time(hour=start_hour-1,minute=59 if start_minutes == 0 else start_minutes-1)
+    end_time = time(hour=end_hour,minute=end_minutes+1)
+
+    time_frame_start =datetime.combine(start,start_time,tzinfo=timezone.utc)
+    time_frame_end = datetime.combine(end,end_time,tzinfo=timezone.utc)
+
+
     events_result = (
-        service.events()
+        calendar_instance.events()
         .list(
             calendarId=config.CALENDAR_ID,
-            timeMin=datetime.combine(start,start_time,tzinfo=timezone.utc).isoformat(),
-            timeMax=datetime.combine(end,end_time,tzinfo=timezone.utc).isoformat(),
+            timeMin=time_frame_start.isoformat(),
+            timeMax=time_frame_end.isoformat(),
             maxResults=10,
             singleEvents=True,
             orderBy="startTime",
@@ -67,4 +74,27 @@ async def consultar_disponibilidad(start_date:int,end_date:int,start_hour:int = 
     )
     events = events_result.get("items",[])
 
-    return events
+    results = {}
+
+    for i in range((end_date - start_date) + 1 ):
+        today = time_frame_start + timedelta(days=i)
+        today_events = filter(lambda event: datetime.fromisoformat(event.start.dateTime).toordinal() == today.toordinal(),events)
+        service_time = config.SERVICIOS.get(servicio)
+        if today.weekday() == 6 : 
+            continue
+        if today.weekday() == 5 and today.hour() >= 14:
+             continue
+        if today.hour() < 12:
+            for j in range((today.hour()*60) + today.minute(),14*60,service_time):
+                results = results.get(f"{today.day()}-{today.month()}-{today.year()}") or []
+                results[f"{today.day()}-{today.month()}-{today.year()}"].append(f"{today.hour()+1}:{today.minute()+1}")
+                today = today + timedelta(minutes=service_time)
+        today = today.replace(hour=16)
+        if today.hour() > 12 and today.weekday()!= 5 :
+            for j in range((today.hour()*60) + today.minute(),20*60,service_time):  
+                results = results.get(f"{today.day()}-{today.month()}-{today.year()}") or []
+                results[f"{today.day()}-{today.month()}-{today.year()}"].append(f"{today.hour()+1}:{today.minute()+1}")
+                today = today + timedelta(minutes=service_time)
+
+
+    return results

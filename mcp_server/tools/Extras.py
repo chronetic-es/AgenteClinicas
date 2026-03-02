@@ -3,14 +3,19 @@ import calendario
 import datetime
 import config
 
+
+@mcp.tool()
+async def servicios() -> list:
+
+    listaServicios = []
+    for item in config.SERVICIOS:
+        listaServicios.append(item)
+    
+    return listaServicios
+
 @mcp.tool()
 async def resolverDuda() ->str:
     return ""
-
-@mcp.tool()
-async def servicios() -> str:
-    return "Depilación,Masajes"
-
 
 @mcp.tool()
 async def crearEvento()->str:
