@@ -82,24 +82,26 @@ async def consultar_disponibilidad(
         if today.weekday() == 5 and today.hour() >= 14:
              continue
         if today.hour < 14:
+            temp = today 
             for j in range((today.hour*60) + today.minute,14*60,service_time):
                 for event in today_events:
-                    if  datetime.fromisoformat(event['start']['dateTime']) <= today + timedelta(minutes=1) <= datetime.fromisoformat(event['end']['dateTime'])  :  
+                    if  datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(minutes=1) <= datetime.fromisoformat(event['end']['dateTime'])  :  
                         results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
-                        results[f"{today.day}-{today.month}-{today.year}"].append(f"{today.hour+1 if today.minute+1 == 60 else today.hour}:{0 if today.minute+1==60 else today.minute+1}")
-                                    
-                today = today + timedelta(minutes=service_time)
+                        results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour+1 if temp.minute+1 == 60 else temp.hour}:{'00' if temp.minute+1==60 else temp.minute+1}")
+                        break
+                temp = temp + timedelta(minutes=service_time)
 
         if end_hour > 14:
             today = today.replace(hour=16)
 
         if today.hour > 16 and today.weekday()!= 5 :
+            temp = today
             for j in range((today.hour*60) + today.minute,20*60,service_time):  
-                if datetime.fromisoformat(event['start']['dateTime']) <= today + timedelta(minutes=1) <= datetime.fromisoformat(event['end']['dateTime'])  :
+                if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(minutes=1) <= datetime.fromisoformat(event['end']['dateTime'])  :
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
-                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{today.hour+1 if today.minute+1 == 60 else today.hour}:{0 if today.minute+1==60 else today.minute+1}")
-                    
-                today = today + timedelta(minutes=service_time)
+                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour+1 if temp.minute+1 == 60 else temp.hour}:{'00' if temp.minute+1==60 else temp.minute+1}")
+                    break
+                temp = temp + timedelta(minutes=service_time)
 
 
     return results
