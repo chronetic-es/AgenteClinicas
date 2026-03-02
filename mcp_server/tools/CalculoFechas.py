@@ -39,7 +39,9 @@ async def calcular_fecha(dias_desde_hoy: int) -> str:
 @mcp.tool()
 async def consultar_disponibilidad(
     start_date:int,end_date:int,
-    servicio:str,**kwargs
+    start_hour:int,end_hour:int,
+    start_minutes:int,end_minutes:int,
+    servicio:str,
     ) -> list:
     """Consulta la disponibilidad en el calendario de google.Úsalo cuando tengas un rango de fechas o una fecha exacta.
     """
@@ -47,11 +49,6 @@ async def consultar_disponibilidad(
 
     start= date.today() + timedelta(days=start_date)
     end= date.today() + timedelta(days=end_date)
-
-    start_hour = kwargs.get('start_hour') or 10
-    end_hour = kwargs.get('end_hour') or 20
-    start_minutes = kwargs.get('start_minutes') or 0
-    end_minutes = kwargs.get('end_minutes') or 0
 
     start_time = time(hour=start_hour-1,minute=59 if start_minutes == 0 else start_minutes-1)
     end_time = time(hour=end_hour,minute=end_minutes+1)
