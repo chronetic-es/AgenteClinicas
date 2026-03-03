@@ -6,7 +6,7 @@ import config
 
 @mcp.tool()
 async def servicios() -> list:
-
+    """Consulta los servicios de la clínica"""
     listaServicios = []
     for item in config.SERVICIOS:
         listaServicios.append(item)
