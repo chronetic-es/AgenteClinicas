@@ -133,9 +133,9 @@ async def consultar_disponibilidad(
                 if check_event_overlap(temp,today_events):
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or {}
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas') or []
-                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].update(date_to_text(temp.hour,temp.minute))
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].append(date_to_text(temp.hour,temp.minute))
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
-                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].update(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")   
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")   
                     
                 temp = temp + timedelta(minutes=service_time)
 
