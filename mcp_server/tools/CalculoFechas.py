@@ -12,6 +12,25 @@ _DIAS_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "do
 _MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
              "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 
+def check_event_overlap(date_to_check,events) -> bool:
+    is_valid_time = True
+    for event in events:
+        if datetime.fromisoformat(event['start']['dateTime'])<= date_to_check< datetime.fromisoformat(event['end']['dateTime']):
+            is_valid_time = False
+
+    return is_valid_time
+
+def date_to_text(date_hour,date_minute) -> str:
+    hour_in_text = {
+        9 : "Nueve",10 : "Diez" , 11 : "Once" , 12: "Doce" , 13: "Una" , 14 : "Dos",
+        16 : "Cuatro" , 17 : "Cinco" , 18 : "Seis" , 19 : "Siete" , 20 : "Ocho"
+    }
+    minutes_in_text = {
+        15: "Cuarto" , 30 :"Media", 45:"Menos cuarto"
+    }
+
+    return f"la{'s' if date_hour != 13 else ""} {hour_in_text.get(date_hour)} y {"" if date_minute== 0 else minutes_in_text.get(date_minute)}"
+
 
 @mcp.tool()
 async def obtener_fecha_actual() -> str:
@@ -82,18 +101,27 @@ async def consultar_disponibilidad(
             continue
         if today.weekday() == 5 and today.hour >= 14:
              continue
+        if start_hour == end_hour and start_minutes == end_minutes: 
+            if check_event_overlap(temp,today_events):
+                    results.update({f"{today.day}-{today.month}-{today.year}":
+                                    {
+                                        "alternativas":date_to_text(temp.hour,temp.minute),
+                                        "alternativas_hhmm":f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}",
+                                    }})     
+                           
+            temp = temp + timedelta(minutes=service_time)
+            continue
         if today.hour < 14:
             temp = today
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
-                is_valid_time = True
-                for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime'])<= temp < datetime.fromisoformat(event['end']['dateTime']):
-                        is_valid_time = False
-                if is_valid_time:
-                    results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
-                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
-                
-                today_events = filter(lambda event: datetime.fromisoformat(event['start']['dateTime']).toordinal() == today.toordinal(),events)
+
+                if check_event_overlap(temp,today_events):
+                    results.update({f"{today.day}-{today.month}-{today.year}":
+                                    {
+                                        "alternativas":date_to_text(temp.hour,temp.minute),
+                                        "alternativas_hhmm":f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}",
+                                    }})     
+                           
                 temp = temp + timedelta(minutes=service_time)
 
         if end_hour > 16 and start_hour < 16 :
@@ -102,15 +130,13 @@ async def consultar_disponibilidad(
         if today.hour >= 16 and today.weekday()!= 5 :
             temp = today
             for j in range((today.hour*60) + today.minute, (end_hour*60) if (end_hour*60) < (20*60) else (20*60),service_time):  
-                is_valid_time = True
-                for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp < datetime.fromisoformat(event['end']['dateTime']):
-                        is_valid_time = False
-                if is_valid_time:
-                    results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
-                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
-
-                today_events = filter(lambda event: datetime.fromisoformat(event['start']['dateTime']).toordinal() == today.toordinal(),events)
+                if check_event_overlap(temp,today_events):
+                    results.update({f"{today.day}-{today.month}-{today.year}":
+                                    {
+                                        "alternativas":date_to_text(temp.hour,temp.minute),
+                                        "alternativas_hhmm":f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}",
+                                    }})     
+                           
                 temp = temp + timedelta(minutes=service_time)
 
 
