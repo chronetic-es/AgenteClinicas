@@ -7,6 +7,3 @@ services:
       - CREDENTIALS=${CREDENTIALS}
     ports:
       - "8080:8080"
-
-volumes:
-  postgres_data:
