@@ -86,7 +86,7 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp  <= datetime.fromisoformat(event['end']['dateTime']):
+                    if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(hours=1) <= datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
 
 
@@ -94,7 +94,7 @@ async def consultar_disponibilidad(
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
                 
-                temp = temp + datetime.timedelta(minutes=service_time)
+                temp = temp + timedelta(minutes=service_time)
 
         if end_hour > 16 and start_hour < 16 :
             today = today.replace(hour=16,minute=0)
@@ -104,13 +104,13 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute, (end_hour*60) if (end_hour*60) < (20*60) else (20*60),service_time):  
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp <= datetime.fromisoformat(event['end']['dateTime']):
+                    if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(hours=1) <= datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
 
-                temp = temp + datetime.timedelta(minutes=service_time)
+                temp = temp + timedelta(minutes=service_time)
 
 
     return results
