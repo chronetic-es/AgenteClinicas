@@ -74,7 +74,7 @@ async def consultar_disponibilidad(
     results = {}
 
     for i in range(0,(end_date-start_date) +1 ,1 ):
-        today = time_frame_start + datetime.timedelta(days=i)
+        today = time_frame_start + timedelta(days=i)
         today_events = filter(lambda event: datetime.fromisoformat(event['start']['dateTime']).toordinal() == today.toordinal(),events)
         service_time = config.SERVICIOS.get(servicio)
         if today.weekday() == 6 : 
