@@ -29,7 +29,7 @@ def date_to_text(date_hour,date_minute) -> str:
         15: "Cuarto" , 30 :"Media", 45:"Menos cuarto"
     }
 
-    return f"la{'s' if date_hour != 13 else ""} {hour_in_text.get(date_hour)} y {"" if date_minute== 0 else minutes_in_text.get(date_minute)}"
+    return f"la{'s' if date_hour != 13 else ''} {hour_in_text.get(date_hour)} {'' if date_minute== 0 else 'y' + minutes_in_text.get(date_minute)}"
 
 
 @mcp.tool()
