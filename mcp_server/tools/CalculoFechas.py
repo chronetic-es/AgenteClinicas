@@ -74,7 +74,7 @@ async def consultar_disponibilidad(
     results = {}
 
     for i in range(0,(end_date-start_date) +1 ,1 ):
-        today = time_frame_start + timedelta(days=i)
+        today = time_frame_start + datetime.timedelta(days=i)
         today_events = filter(lambda event: datetime.fromisoformat(event['start']['dateTime']).toordinal() == today.toordinal(),events)
         service_time = config.SERVICIOS.get(servicio)
         if today.weekday() == 6 : 
@@ -86,15 +86,17 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
                 is_valid_time = True
                 for event in today_events:
-                    print(event)
                     if datetime.fromisoformat(event['start']['dateTime']) <= temp  <= datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
+
+
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
-                temp = temp + timedelta(minutes=service_time)
+                
+                temp = temp + datetime.timedelta(minutes=service_time)
 
-        if end_hour > 16:
+        if end_hour > 16 and start_hour < 16 :
             today = today.replace(hour=16,minute=0)
 
         if today.hour >= 16 and today.weekday()!= 5 :
@@ -108,7 +110,7 @@ async def consultar_disponibilidad(
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
 
-                temp = temp + timedelta(minutes=service_time)
+                temp = temp + datetime.timedelta(minutes=service_time)
 
 
     return results
