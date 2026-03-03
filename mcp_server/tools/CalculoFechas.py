@@ -1,4 +1,5 @@
 from datetime import date, timedelta,time,datetime,timezone
+from zoneinfo import ZoneInfo
 import json
 import calendario
 import config
@@ -82,14 +83,12 @@ async def consultar_disponibilidad(
         if today.weekday() == 5 and today.hour >= 14:
              continue
         if today.hour < 14:
-            temp = today 
+            temp = today.astimezone(ZoneInfo('Europe/Paris'))
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(hours=1) <= datetime.fromisoformat(event['end']['dateTime']):
+                    if datetime.fromisoformat(event['start']['dateTime']) <= temp < datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
-
-
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
                     results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
@@ -104,7 +103,7 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute, (end_hour*60) if (end_hour*60) < (20*60) else (20*60),service_time):  
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp + timedelta(hours=1) <= datetime.fromisoformat(event['end']['dateTime']):
+                    if datetime.fromisoformat(event['start']['dateTime']) <= temp < datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
