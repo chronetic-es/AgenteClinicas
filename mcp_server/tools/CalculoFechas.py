@@ -102,12 +102,12 @@ async def consultar_disponibilidad(
         if today.weekday() == 5 and today.hour >= 14:
              continue
         if start_hour == end_hour and start_minutes == end_minutes: 
-            if check_event_overlap(temp,today_events):  
+            if check_event_overlap(today,today_events):  
                 results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or {}
                 results[f"{today.day}-{today.month}-{today.year}"]["alternativas"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas') or []
-                results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].append(date_to_text(temp.hour,temp.minute))
+                results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].append(date_to_text(today.hour,today.minute))
                 results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
-                results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")     
+                results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].append(f"{today.hour}:{'00' if today.minute == 0 else today.minute}")     
                            
             continue
         if today.hour < 14:
