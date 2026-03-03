@@ -86,7 +86,7 @@ async def consultar_disponibilidad(
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']).astimezone(timezone.utc) <= temp < datetime.fromisoformat(event['end']['dateTime']).astimezone(timezone.utc):
+                    if datetime.fromisoformat(event['start']['dateTime'])<= temp < datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
