@@ -83,29 +83,31 @@ async def consultar_disponibilidad(
              continue
         if today.hour < 14:
             temp = today 
-            for j in range((today.hour*60) + today.minute,(14*60) - service_time,service_time):
+            for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60) - service_time,service_time):
                 is_valid_time = True
                 for event in today_events:
+                    print(datetime.fromisoformat(event['start']['dateTime']))
                     if datetime.fromisoformat(event['start']['dateTime']) <= temp  <= datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
+                        print(temp)
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
-                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{temp.minute}")
+                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
                 temp = temp + timedelta(minutes=service_time)
 
-        if end_hour > 14:
+        if end_hour > 16:
             today = today.replace(hour=16,minute=0)
 
         if today.hour >= 16 and today.weekday()!= 5 :
             temp = today
-            for j in range((today.hour*60) + today.minute,(20*60)-service_time,service_time):  
+            for j in range((today.hour*60) + today.minute, (end_hour*60) if (end_hour*60) < (20*60) else (20*60)-service_time,service_time):  
                 is_valid_time = True
                 for event in today_events:
                     if datetime.fromisoformat(event['start']['dateTime']) <= temp <= datetime.fromisoformat(event['end']['dateTime']):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
-                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{temp.minute}")
+                    results[f"{today.day}-{today.month}-{today.year}"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
 
                 temp = temp + timedelta(minutes=service_time)
 
