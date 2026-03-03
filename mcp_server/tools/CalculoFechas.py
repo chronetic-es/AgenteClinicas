@@ -22,14 +22,14 @@ def check_event_overlap(date_to_check,events) -> bool:
 
 def date_to_text(date_hour,date_minute) -> str:
     hour_in_text = {
-        9 : "Nueve",10 : "Diez" , 11 : "Once" , 12: "Doce" , 13: "Una" , 14 : "Dos",
-        16 : "Cuatro" , 17 : "Cinco" , 18 : "Seis" , 19 : "Siete" , 20 : "Ocho"
+        9 : "nueve",10 : "diez" , 11 : "once" , 12: "doce" , 13: "una" , 14 : "dos",
+        16 : "cuatro" , 17 : "cinco" , 18 : "seis" , 19 : "siete" , 20 : "ocho"
     }
     minutes_in_text = {
-        15: "Cuarto" , 30 :"Media", 45:"Menos cuarto"
+        15: "cuarto" , 30 :"media", 45:"menos cuarto"
     }
 
-    return f"la{'s' if date_hour != 13 else ''} {hour_in_text.get(date_hour)} {'' if date_minute== 0 else 'y' + minutes_in_text.get(date_minute)}"
+    return f"la{'s' if date_hour != 13 else ''} {hour_in_text.get(date_hour)} {'' if date_minute== 0 else 'y ' + minutes_in_text.get(date_minute)}"
 
 
 @mcp.tool()
@@ -115,12 +115,12 @@ async def consultar_disponibilidad(
             temp = today
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
 
-                if check_event_overlap(temp,today_events):
-                    results.update({f"{today.day}-{today.month}-{today.year}":
-                                    {
-                                        "alternativas":date_to_text(temp.hour,temp.minute),
-                                        "alternativas_hhmm":f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}",
-                                    }})     
+                if check_event_overlap(temp,today_events):  
+                    results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or {}
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas') or []
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].update(date_to_text(temp.hour,temp.minute))
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].update(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
                            
                 temp = temp + timedelta(minutes=service_time)
 
@@ -131,12 +131,12 @@ async def consultar_disponibilidad(
             temp = today
             for j in range((today.hour*60) + today.minute, (end_hour*60) if (end_hour*60) < (20*60) else (20*60),service_time):  
                 if check_event_overlap(temp,today_events):
-                    results.update({f"{today.day}-{today.month}-{today.year}":
-                                    {
-                                        "alternativas":date_to_text(temp.hour,temp.minute),
-                                        "alternativas_hhmm":f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}",
-                                    }})     
-                           
+                    results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or {}
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas') or []
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].update(date_to_text(temp.hour,temp.minute))
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
+                    results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].update(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")   
+                    
                 temp = temp + timedelta(minutes=service_time)
 
 
