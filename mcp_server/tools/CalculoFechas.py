@@ -102,14 +102,13 @@ async def consultar_disponibilidad(
         if today.weekday() == 5 and today.hour >= 14:
              continue
         if start_hour == end_hour and start_minutes == end_minutes: 
-            if check_event_overlap(temp,today_events):
-                    results.update({f"{today.day}-{today.month}-{today.year}":
-                                    {
-                                        "alternativas":date_to_text(temp.hour,temp.minute),
-                                        "alternativas_hhmm":f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}",
-                                    }})     
+            if check_event_overlap(temp,today_events):  
+                results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or {}
+                results[f"{today.day}-{today.month}-{today.year}"]["alternativas"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas') or []
+                results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].append(date_to_text(temp.hour,temp.minute))
+                results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
+                results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")     
                            
-            temp = temp + timedelta(minutes=service_time)
             continue
         if today.hour < 14:
             temp = today
@@ -122,6 +121,7 @@ async def consultar_disponibilidad(
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")
                            
+                today_events = filter(lambda event: datetime.fromisoformat(event['start']['dateTime']).toordinal() == today.toordinal(),events)
                 temp = temp + timedelta(minutes=service_time)
 
         if end_hour > 16 and start_hour < 16 :
@@ -136,7 +136,8 @@ async def consultar_disponibilidad(
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas"].append(date_to_text(temp.hour,temp.minute))
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"] = results[f"{today.day}-{today.month}-{today.year}"].get('alternativas_hhmm') or []
                     results[f"{today.day}-{today.month}-{today.year}"]["alternativas_hhmm"].append(f"{temp.hour}:{'00' if temp.minute == 0 else temp.minute}")   
-                    
+
+                today_events = filter(lambda event: datetime.fromisoformat(event['start']['dateTime']).toordinal() == today.toordinal(),events)  
                 temp = temp + timedelta(minutes=service_time)
 
 
