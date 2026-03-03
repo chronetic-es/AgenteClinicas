@@ -1,4 +1,5 @@
 from datetime import date, timedelta,time,datetime,timezone
+from zoneinfo import ZoneInfo
 import json
 import calendario
 import config
@@ -53,8 +54,8 @@ async def consultar_disponibilidad(
     start_time = time(hour=start_hour,minute=start_minutes)
     end_time = time(hour=end_hour,minute=end_minutes)
 
-    time_frame_start =datetime.combine(start,start_time,tzinfo=timezone.utc)
-    time_frame_end = datetime.combine(end,end_time,tzinfo=timezone.utc)
+    time_frame_start =datetime.combine(start,start_time,tzinfo=ZoneInfo("Europe/Paris"))
+    time_frame_end = datetime.combine(end,end_time,tzinfo=ZoneInfo("Europe/Paris"))
 
 
     events_result = (
