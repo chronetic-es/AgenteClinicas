@@ -1,5 +1,4 @@
 from datetime import date, timedelta,time,datetime,timezone
-from zoneinfo import ZoneInfo
 import json
 import calendario
 import config
@@ -83,11 +82,14 @@ async def consultar_disponibilidad(
         if today.weekday() == 5 and today.hour >= 14:
              continue
         if today.hour < 14:
-            temp = today.astimezone(ZoneInfo('Europe/Paris'))
+            temp = today
             for j in range((today.hour*60) + today.minute,(end_hour*60) if (end_hour*60) <(14*60)  else (14*60),service_time):
                 is_valid_time = True
                 for event in today_events:
-                    if datetime.fromisoformat(event['start']['dateTime']) <= temp < datetime.fromisoformat(event['end']['dateTime']):
+                    print(event['start']['dateTime'])
+                    print(temp)
+                    print(event['end']['dateTime'])
+                    if datetime.fromisoformat(event['start']['dateTime']).astimezone(timezone.utc) <= temp < datetime.fromisoformat(event['end']['dateTime']).astimezone(timezone.utc):
                         is_valid_time = False
                 if is_valid_time:
                     results[f"{today.day}-{today.month}-{today.year}"] = results.get(f"{today.day}-{today.month}-{today.year}") or []
