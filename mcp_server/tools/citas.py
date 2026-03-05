@@ -217,16 +217,14 @@ async def modificar_cita(
     telefono: str,
     fecha_actual: str,
     hora_actual: str,
-    nuevo_servicio: str | None = None,
-    nueva_fecha: str | None = None,
-    nueva_hora: str | None = None,
+    nuevo_servicio: str = "",
+    nueva_fecha: str = "",
+    nueva_hora: str = "",
 ) -> str:
     """Modifica una cita existente identificada por teléfono, fecha y hora actuales.
-    Solo se actualizan los campos proporcionados (nuevo_servicio, nueva_fecha, nueva_hora).
-    telefono: debe coincidir con el de la cita. fecha_actual/hora_actual: identifican la cita."""
-    nuevo_servicio = nuevo_servicio or ""
-    nueva_fecha = nueva_fecha or ""
-    nueva_hora = nueva_hora or ""
+    Solo se actualizan los campos proporcionados. Para campos que no cambien, pasa "".
+    telefono: número del cliente. fecha_actual/hora_actual: identifican la cita.
+    nuevo_servicio/nueva_fecha/nueva_hora: nuevos valores, o "" para no cambiar."""
     err = validar_telefono(telefono)
     if err:
         return err
