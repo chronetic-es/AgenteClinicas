@@ -17,6 +17,8 @@ _DIAS_ES_KEY = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "
 _DIAS_DISPLAY = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 _MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
              "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+_HORAS_PALABRAS = ["doce", "una", "dos", "tres", "cuatro", "cinco",
+                   "seis", "siete", "ocho", "nueve", "diez", "once"]
 
 
 def _tz() -> zoneinfo.ZoneInfo:
@@ -27,10 +29,21 @@ def _dt(fecha: str, hora: str) -> datetime:
     return datetime.fromisoformat(f"{fecha}T{hora}:00").replace(tzinfo=_tz())
 
 
+def _hora_en_palabras(h: int, m: int) -> str:
+    h12 = h % 12
+    art = "la" if h12 == 1 else "las"
+    base = f"{art} {_HORAS_PALABRAS[h12]}"
+    if m == 0:
+        return f"{base} en punto"
+    return f"{base} y {m} minutos"
+
+
 def _format_dt(dt: datetime) -> str:
     dia = _DIAS_DISPLAY[dt.weekday()]
     mes = _MESES_ES[dt.month - 1]
-    return f"{dia} {dt.day} de {mes} de {dt.year} a las {dt.strftime('%H:%M')}"
+    hora_num = dt.strftime('%H:%M')
+    hora_palabras = _hora_en_palabras(dt.hour, dt.minute)
+    return f"{dia} {dt.day} de {mes} de {dt.year} a las {hora_num} ({hora_palabras})"
 
 
 def _overlaps_event(event: dict, slot_ini: datetime, slot_fin: datetime) -> bool:
@@ -153,11 +166,10 @@ async def crear_cita(
         },
     }
 
-    created = gcal.events().insert(calendarId=CALENDAR_ID, body=event_body).execute()
+    gcal.events().insert(calendarId=CALENDAR_ID, body=event_body).execute()
     return (
         f"Cita confirmada. {svc['nombre']} para {nombre_cliente.strip()} "
         f"el {_format_dt(dt_inicio)} (duración: {duracion} minutos). "
-        f"ID de cita: {created['id']}. "
         f"Puede gestionar su cita llamando con el teléfono {telefono}."
     )
 
@@ -193,8 +205,8 @@ async def obtener_citas_cliente(telefono: str) -> str:
         duracion = svc.get("duracion_min", 0)
         dt_end = dt_start + timedelta(minutes=duracion)
         lineas.append(
-            f"- ID: {e['id']} | {nombre_svc} | "
-            f"{_format_dt(dt_start)} hasta las {dt_end.strftime('%H:%M')}"
+            f"- {nombre_svc} | {_format_dt(dt_start)} "
+            f"hasta las {dt_end.strftime('%H:%M')} ({_hora_en_palabras(dt_end.hour, dt_end.minute)})"
         )
 
     return "\n".join(lineas)
@@ -203,35 +215,45 @@ async def obtener_citas_cliente(telefono: str) -> str:
 @mcp.tool()
 async def modificar_cita(
     telefono: str,
-    evento_id: str,
+    fecha_actual: str,
+    hora_actual: str,
     nuevo_servicio: str = "",
     nueva_fecha: str = "",
     nueva_hora: str = "",
 ) -> str:
-    """Modifica una cita existente. Solo se actualizan los campos proporcionados.
-    Si cambian servicio, fecha u hora, se verifica disponibilidad primero.
-    telefono: debe coincidir con el de la cita para autorizar el cambio."""
+    """Modifica una cita existente identificada por teléfono, fecha y hora actuales.
+    Solo se actualizan los campos proporcionados (nuevo_servicio, nueva_fecha, nueva_hora).
+    telefono: debe coincidir con el de la cita. fecha_actual/hora_actual: identifican la cita."""
     err = validar_telefono(telefono)
     if err:
         return err
 
+    for err in [validar_fecha(fecha_actual), validar_hora(hora_actual)]:
+        if err:
+            return err
+
+    dt_cita = _dt(fecha_actual, hora_actual)
     gcal = obtener_cliente_gcal()
+    result = gcal.events().list(
+        calendarId=CALENDAR_ID,
+        timeMin=dt_cita.isoformat(),
+        timeMax=(dt_cita + timedelta(minutes=1)).isoformat(),
+        singleEvents=True,
+        privateExtendedProperty=f"telefono={telefono}",
+        maxResults=5,
+    ).execute()
+    eventos = [
+        e for e in result.get("items", [])
+        if datetime.fromisoformat(e["start"]["dateTime"]).replace(tzinfo=_tz()) == dt_cita
+    ]
+    if not eventos:
+        return "No se encontró ninguna cita con esa fecha y hora para este teléfono."
 
-    try:
-        evento = gcal.events().get(calendarId=CALENDAR_ID, eventId=evento_id).execute()
-    except Exception:
-        return "No se encontró ninguna cita con ese ID."
-
-    # Ownership check
-    tel_evento = evento.get("extendedProperties", {}).get("private", {}).get("telefono", "")
-    if tel_evento != telefono:
-        return "El teléfono no coincide con el de la cita. No se puede modificar."
+    evento = eventos[0]
+    evento_id = evento["id"]
 
     # Resolve current values
     svc_actual = evento.get("extendedProperties", {}).get("private", {}).get("servicio", "")
-    dt_actual = datetime.fromisoformat(evento["start"]["dateTime"])
-    fecha_actual = dt_actual.strftime("%Y-%m-%d")
-    hora_actual = dt_actual.strftime("%H:%M")
 
     # Resolve new values
     svc_key = _normalizar_servicio(nuevo_servicio) if nuevo_servicio.strip() else svc_actual
@@ -294,34 +316,45 @@ async def modificar_cita(
 
     return (
         f"Cita modificada. {svc['nombre']} el {_format_dt(dt_nuevo_inicio)} "
-        f"(duración: {duracion} minutos). ID: {evento_id}."
+        f"(duración: {duracion} minutos)."
     )
 
 
 @mcp.tool()
-async def cancelar_cita(telefono: str, evento_id: str) -> str:
-    """Cancela una cita existente.
-    telefono: debe coincidir con el de la cita para autorizar la cancelación."""
+async def cancelar_cita(telefono: str, fecha: str, hora: str) -> str:
+    """Cancela una cita existente identificada por teléfono, fecha y hora de inicio.
+    telefono: debe coincidir con el de la cita. fecha: AAAA-MM-DD. hora: HH:MM."""
     err = validar_telefono(telefono)
     if err:
         return err
 
+    for err in [validar_fecha(fecha), validar_hora(hora)]:
+        if err:
+            return err
+
+    dt_cita = _dt(fecha, hora)
     gcal = obtener_cliente_gcal()
+    result = gcal.events().list(
+        calendarId=CALENDAR_ID,
+        timeMin=dt_cita.isoformat(),
+        timeMax=(dt_cita + timedelta(minutes=1)).isoformat(),
+        singleEvents=True,
+        privateExtendedProperty=f"telefono={telefono}",
+        maxResults=5,
+    ).execute()
+    eventos = [
+        e for e in result.get("items", [])
+        if datetime.fromisoformat(e["start"]["dateTime"]).replace(tzinfo=_tz()) == dt_cita
+    ]
+    if not eventos:
+        return "No se encontró ninguna cita con esa fecha y hora para este teléfono."
 
-    try:
-        evento = gcal.events().get(calendarId=CALENDAR_ID, eventId=evento_id).execute()
-    except Exception:
-        return "No se encontró ninguna cita con ese ID."
-
-    tel_evento = evento.get("extendedProperties", {}).get("private", {}).get("telefono", "")
-    if tel_evento != telefono:
-        return "El teléfono no coincide con el de la cita. No se puede cancelar."
-
+    evento = eventos[0]
     dt_start = datetime.fromisoformat(evento["start"]["dateTime"])
     svc_key = evento.get("extendedProperties", {}).get("private", {}).get("servicio", "")
     nombre_svc = SERVICIOS.get(svc_key, {}).get("nombre", svc_key)
 
-    gcal.events().delete(calendarId=CALENDAR_ID, eventId=evento_id).execute()
+    gcal.events().delete(calendarId=CALENDAR_ID, eventId=evento["id"]).execute()
 
     return f"Cita de {nombre_svc} del {_format_dt(dt_start)} cancelada correctamente."
 
@@ -384,7 +417,8 @@ async def obtener_slots_disponibles(
                 slot_fin_dt = slot_dt + timedelta(minutes=duracion)
                 solapados = sum(1 for e in eventos if _overlaps_event(e, slot_dt, slot_fin_dt))
                 if solapados < svc["max_paralelo"]:
-                    slots_libres.append(slot_dt.strftime("%H:%M"))
+                    hora_num = slot_dt.strftime("%H:%M")
+                    slots_libres.append(f"{hora_num} ({_hora_en_palabras(slot_dt.hour, slot_dt.minute)})")
                 slot_dt += timedelta(minutes=duracion)
 
         if slots_libres:
