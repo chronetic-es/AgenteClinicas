@@ -289,7 +289,6 @@ R: Aproximadamente 50-60 minutos para pacientes privados.
 - **Nombre correcto:** "CyC Fisioterapia" o "Clínica CyC Fisioterapia". La razón social es "Fisioterapia Castro y Cea, S.C.P." (Castro = Maria Castro, Cea = Brais Seoane Cea).
 - **Tono recomendado:** Cercano, profesional y tranquilizador. Los pacientes valoran mucho el trato humano y personalizado de esta clínica.
 - **CRÍTICO para asistente telefónico:**
-  - SIEMPRE confirmar que la cita debe ser validada por la clínica (no es automática)
   - Precio estándar: 30 euros/sesión (50-60 min). Bono 10 sesiones: 250 euros
   - Presoterapia: 25 euros/30 min
   - Preguntar si el paciente pertenece a algún colectivo con descuento (USC, SEPE, menores, AGL, FGB)
