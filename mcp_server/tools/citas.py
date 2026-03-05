@@ -220,10 +220,12 @@ async def modificar_cita(
     nuevo_servicio: str = "",
     nueva_fecha: str = "",
     nueva_hora: str = "",
+    servicio_actual: str = "",
 ) -> str:
     """Modifica una cita existente identificada por teléfono, fecha y hora actuales.
     Solo se actualizan los campos proporcionados. Para campos que no cambien, pasa "".
     telefono: número del cliente. fecha_actual/hora_actual: identifican la cita.
+    servicio_actual: servicio de la cita a modificar (usar cuando el cliente tiene varias citas a la misma hora).
     nuevo_servicio/nueva_fecha/nueva_hora: nuevos valores, o "" para no cambiar."""
     err = validar_telefono(telefono)
     if err:
@@ -247,8 +249,15 @@ async def modificar_cita(
         e for e in result.get("items", [])
         if datetime.fromisoformat(e["start"]["dateTime"]).replace(tzinfo=_tz()) == dt_cita
     ]
+    if servicio_actual.strip():
+        svc_key_actual = _normalizar_servicio(servicio_actual)
+        if svc_key_actual:
+            eventos = [
+                e for e in eventos
+                if e.get("extendedProperties", {}).get("private", {}).get("servicio", "") == svc_key_actual
+            ]
     if not eventos:
-        return "No se encontró ninguna cita con esa fecha y hora para este teléfono."
+        return "No se encontró ninguna cita con esa fecha, hora y servicio para este teléfono."
 
     evento = eventos[0]
     evento_id = evento["id"]
@@ -322,9 +331,10 @@ async def modificar_cita(
 
 
 @mcp.tool()
-async def cancelar_cita(telefono: str, fecha: str, hora: str) -> str:
+async def cancelar_cita(telefono: str, fecha: str, hora: str, servicio: str = "") -> str:
     """Cancela una cita existente identificada por teléfono, fecha y hora de inicio.
-    telefono: debe coincidir con el de la cita. fecha: AAAA-MM-DD. hora: HH:MM."""
+    telefono: debe coincidir con el de la cita. fecha: AAAA-MM-DD. hora: HH:MM.
+    servicio: nombre del servicio (usar cuando el cliente tiene varias citas a la misma hora)."""
     err = validar_telefono(telefono)
     if err:
         return err
@@ -347,8 +357,15 @@ async def cancelar_cita(telefono: str, fecha: str, hora: str) -> str:
         e for e in result.get("items", [])
         if datetime.fromisoformat(e["start"]["dateTime"]).replace(tzinfo=_tz()) == dt_cita
     ]
+    if servicio.strip():
+        svc_key_filtro = _normalizar_servicio(servicio)
+        if svc_key_filtro:
+            eventos = [
+                e for e in eventos
+                if e.get("extendedProperties", {}).get("private", {}).get("servicio", "") == svc_key_filtro
+            ]
     if not eventos:
-        return "No se encontró ninguna cita con esa fecha y hora para este teléfono."
+        return "No se encontró ninguna cita con esa fecha, hora y servicio para este teléfono."
 
     evento = eventos[0]
     dt_start = datetime.fromisoformat(evento["start"]["dateTime"])

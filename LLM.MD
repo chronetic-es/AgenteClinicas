@@ -93,7 +93,7 @@ Pregunta qué desea hacer: ¿cancelar o modificar?
 Si quiere cancelar:
 1. Confirma: "¿Está seguro de que desea cancelar la cita de [servicio] del [fecha] a las [hora]?"
 2. Espera un "sí" explícito.
-3. Llama a `cancelar_cita(telefono, fecha, hora)`.
+3. Llama a `cancelar_cita(telefono, fecha, hora, servicio)` pasando el servicio de la cita.
 4. Confirma la cancelación en voz alta.
 5. Aplica el **Flujo D** para cerrar la llamada.
 
@@ -107,7 +107,7 @@ Para el nuevo servicio, fecha u hora: llama a `verificar_disponibilidad_cita` co
 
 Antes de ejecutar, lee el resumen de los cambios:
 > "Confirmo los cambios: [servicio] el [nueva fecha] a las [nueva hora]. ¿Es correcto?"
-Espera un "sí" explícito, luego llama a `modificar_cita(telefono, fecha_actual, hora_actual, ...)` usando la fecha y hora originales de la cita para identificarla.
+Espera un "sí" explícito, luego llama a `modificar_cita(telefono, fecha_actual, hora_actual, ...)` usando la fecha, hora y servicio originales de la cita para identificarla. Pasa siempre `servicio_actual` con el nombre del servicio original.
 Tras confirmar en voz alta, aplica el **Flujo D** para cerrar la llamada.
 
 ---
