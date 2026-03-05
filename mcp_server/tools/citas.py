@@ -21,6 +21,21 @@ _HORAS_PALABRAS = ["doce", "una", "dos", "tres", "cuatro", "cinco",
                    "seis", "siete", "ocho", "nueve", "diez", "once"]
 
 
+def _mensaje_fuera_de_horario(fecha: str) -> str:
+    """Returns a human-readable message explaining the clinic is closed at the requested time."""
+    try:
+        d = date.fromisoformat(fecha)
+    except ValueError:
+        return "El horario solicitado no es válido."
+    dia_key = _DIAS_ES_KEY[d.weekday()]
+    dia_display = _DIAS_DISPLAY[d.weekday()]
+    tramos = HORARIO.get(dia_key, [])
+    if not tramos:
+        return f"La clínica está cerrada los {dia_display}s."
+    tramos_str = " y ".join(f"de {a} a {b}" for a, b in tramos)
+    return f"Ese horario está fuera del horario de apertura. Los {dia_display}s la clínica abre {tramos_str}."
+
+
 def _tz() -> zoneinfo.ZoneInfo:
     return zoneinfo.ZoneInfo(TIMEZONE)
 
@@ -85,11 +100,7 @@ async def verificar_disponibilidad_cita(servicio: str, fecha: str, hora_inicio: 
     duracion = svc["duracion_min"]
 
     if not dentro_de_horario(fecha, hora_inicio, duracion):
-        return (
-            f"El horario solicitado está fuera del horario de la clínica o la sesión "
-            f"de {duracion} minutos no cabe completa en ese tramo. "
-            f"Llame a obtener_horario_clinica para consultar el horario."
-        )
+        return _mensaje_fuera_de_horario(fecha)
 
     dt_inicio = _dt(fecha, hora_inicio)
     dt_fin = dt_inicio + timedelta(minutes=duracion)
@@ -137,10 +148,7 @@ async def crear_cita(
     duracion = svc["duracion_min"]
 
     if not dentro_de_horario(fecha, hora_inicio, duracion):
-        return (
-            f"El horario solicitado está fuera del horario de la clínica o la sesión "
-            f"de {duracion} minutos no cabe completa en ese tramo."
-        )
+        return _mensaje_fuera_de_horario(fecha)
 
     dt_inicio = _dt(fecha, hora_inicio)
     dt_fin = dt_inicio + timedelta(minutes=duracion)
@@ -290,10 +298,7 @@ async def modificar_cita(
     duracion = svc["duracion_min"]
 
     if not dentro_de_horario(fecha, hora, duracion):
-        return (
-            f"El nuevo horario está fuera del horario de la clínica o la sesión "
-            f"de {duracion} minutos no cabe completa en ese tramo."
-        )
+        return _mensaje_fuera_de_horario(fecha)
 
     dt_nuevo_inicio = _dt(fecha, hora)
     dt_nuevo_fin = dt_nuevo_inicio + timedelta(minutes=duracion)
