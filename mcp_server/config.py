@@ -12,14 +12,14 @@ GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS", "")
 # Edita aquí para cambiar nombre, duración o número de plazas simultáneas.
 # ──────────────────────────────────────────────────────────────────────────────
 SERVICIOS: dict[str, dict] = {
-    "depilacion": {
-        "nombre": "Depilación",
-        "duracion_min": 30,
-        "max_paralelo": 2,   # plazas simultáneas para este servicio
-    },
     "fisioterapia": {
         "nombre": "Fisioterapia",
         "duracion_min": 60,
+        "max_paralelo": 2,   # plazas simultáneas para este servicio
+    },
+    "presoterapia": {
+        "nombre": "Presoterapia",
+        "duracion_min": 30,
         "max_paralelo": 1,
     },
 }
@@ -30,12 +30,12 @@ SERVICIOS: dict[str, dict] = {
 # Día vacío = cerrado. Clave "miercoles" sin tilde para evitar problemas de encoding.
 # ──────────────────────────────────────────────────────────────────────────────
 HORARIO: dict[str, list[tuple[str, str]]] = {
-    "lunes":     [("09:00", "13:00"), ("16:00", "20:00")],
-    "martes":    [("09:00", "13:00"), ("16:00", "20:00")],
-    "miercoles": [("09:00", "13:00"), ("16:00", "20:00")],
-    "jueves":    [("09:00", "13:00"), ("16:00", "20:00")],
-    "viernes":   [("09:00", "13:00"), ("16:00", "20:00")],
-    "sabado":    [("09:00", "13:00")],
+    "lunes":     [("09:00", "14:00"), ("16:00", "21:00")],
+    "martes":    [("09:00", "14:00"), ("16:00", "21:00")],
+    "miercoles": [("09:00", "14:00"), ("16:00", "21:00")],
+    "jueves":    [("09:00", "14:00"), ("16:00", "21:00")],
+    "viernes":   [("09:00", "14:00"), ("16:00", "21:00")],
+    "sabado":    [("10:00", "13:30")],
     "domingo":   [],
 }
 
