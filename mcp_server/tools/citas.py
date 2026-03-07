@@ -103,6 +103,8 @@ async def verificar_disponibilidad_cita(servicio: str, fecha: str, hora_inicio: 
         return _mensaje_fuera_de_horario(fecha)
 
     dt_inicio = _dt(fecha, hora_inicio)
+    if dt_inicio <= datetime.now(_tz()):
+        return "Ese horario ya ha pasado. Por favor, elija una fecha y hora futuras."
     dt_fin = dt_inicio + timedelta(minutes=duracion)
 
     gcal = obtener_cliente_gcal()
@@ -151,6 +153,8 @@ async def crear_cita(
         return _mensaje_fuera_de_horario(fecha)
 
     dt_inicio = _dt(fecha, hora_inicio)
+    if dt_inicio <= datetime.now(_tz()):
+        return "Ese horario ya ha pasado. Por favor, elija una fecha y hora futuras."
     dt_fin = dt_inicio + timedelta(minutes=duracion)
 
     gcal = obtener_cliente_gcal()
@@ -301,6 +305,8 @@ async def modificar_cita(
         return _mensaje_fuera_de_horario(fecha)
 
     dt_nuevo_inicio = _dt(fecha, hora)
+    if dt_nuevo_inicio <= datetime.now(_tz()):
+        return "El nuevo horario ya ha pasado. Por favor, elija una fecha y hora futuras."
     dt_nuevo_fin = dt_nuevo_inicio + timedelta(minutes=duracion)
 
     # Check availability, excluding the current event
